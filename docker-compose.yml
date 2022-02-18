@@ -1,0 +1,37 @@
+version: '3.8'
+
+# this is the dev setup. docker-compose won't be used in prod
+services:
+
+  app:
+    image: golang:1.15.6
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        channel: prod #dev # dev for local docker-compose. prod will be on aws
+    ports:
+      - "8000:8000"
+    restart: always #unless-stopped
+    depends_on:
+      - db
+
+  compose:
+    image: python:3.8-slim-buster
+    build:
+      context: /Users/steve/Documents/Development/Flask/Compose
+      dockerfile: Dockerfile
+      args:
+        channel: prod #dev # dev for local docker-compose. prod will be on aws
+    ports:
+      - "5000:5000"
+    restart: always #unless-stopped
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
