@@ -13,13 +13,13 @@ import (
 	"os"
 )
 
-
 func main() {
 
 	// Get development channel from environment variable set in docker file.
 	// Either dev or prod.
 	channel := os.Getenv("channel_env_var")
-	isProd := channel == "prod"
+	// channel == "prod" || channel == "preprod"
+	isProd := channel != "dev" // preprod is with local docker netwroking and aws db and s3
 
 	boolPtr := flag.Bool("prod", isProd, "Provide this flag "+
 		"in production. This ensures that a .config file is "+
@@ -32,7 +32,6 @@ func main() {
 	dbCfg := cfg.Database
 	fmt.Println("trying with host ", dbCfg.Host)
 	services, err := models.NewServices(
-
 		models.WithGorm(dbCfg.Dialect(), dbCfg.ConnectionInfo()),
 		// only log when not in prod
 		models.WithLogMode(!cfg.IsProd()),
@@ -70,18 +69,18 @@ func main() {
 
 	//
 	/*
-	configs := make(map[string]*oauth2.Config)
-	configs[models.OAuthDropbox] = &oauth2.Config{
-		ClientID: 	  cfg.Dropbox.ID,
-		ClientSecret: cfg.Dropbox.Secret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL  :  cfg.Dropbox.AuthURL,
-			TokenURL :  cfg.Dropbox.TokenURL,
-		},
-		RedirectURL: "http://localhost:3000/oauth/dropbox/callback",
-	}
-	oauthsC := controllers.NewOAuths(services.OAuth ,configs)
-	 */
+		configs := make(map[string]*oauth2.Config)
+		configs[models.OAuthDropbox] = &oauth2.Config{
+			ClientID: 	  cfg.Dropbox.ID,
+			ClientSecret: cfg.Dropbox.Secret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL  :  cfg.Dropbox.AuthURL,
+				TokenURL :  cfg.Dropbox.TokenURL,
+			},
+			RedirectURL: "http://localhost:3000/oauth/dropbox/callback",
+		}
+		oauthsC := controllers.NewOAuths(services.OAuth ,configs)
+	*/
 
 	//
 	//
@@ -97,7 +96,7 @@ func main() {
 	corsMw := cors.New(cors.Options{
 		AllowedHeaders: []string{"accept", "authorization", "content-type"},
 		AllowedOrigins: []string{"http://localhost", "http://localhost:3000", "http://localhost:5000",
-								 "http://172.19.0.3:5000", "*"}, // * is for testing only not production
+			"http://172.19.0.3:5000", "*"}, // * is for testing only not production
 		AllowCredentials: true,
 		// Enable Debugging for testing, consider disabling in production
 		Debug: true,
@@ -109,9 +108,9 @@ func main() {
 		User: userMw,
 	}
 
-	r.Handle("/", staticC.Home).Methods("GET")
-	r.Handle("/contact", staticC.Contact).Methods("GET")
-	r.Handle("/faq", staticC.Faq).Methods("GET")
+	//r.Handle("/", staticC.Home).Methods("GET")
+	//r.Handle("/contact", staticC.Contact).Methods("GET")
+	//r.Handle("/faq", staticC.Faq).Methods("GET")
 	r.HandleFunc("/signup", usersC.New).Methods("GET")
 	r.HandleFunc("/signup", usersC.Create).Methods("POST")
 	r.Handle("/login", usersC.LoginView).Methods("GET")
@@ -122,7 +121,6 @@ func main() {
 	// This will assign the page to the nor found handler
 	var h http.Handler = http.Handler(staticC.NotFound)
 	r.NotFoundHandler = h
-
 
 	// Gallery routes
 
@@ -157,7 +155,6 @@ func main() {
 	//	requireUserMw.ApplyFn(galleriesC.ImageViaLink)).
 	//	Methods("POST")
 
-
 	// tracks
 
 	// view tracks
@@ -173,7 +170,6 @@ func main() {
 		requireUserMw.Apply(tracksC.ChooseTypeView)).
 		Methods("GET")
 
-
 	r.HandleFunc("/tracks/{id:[0-9]+}/play",
 		tracksC.Play).
 		Methods("GET").
@@ -188,7 +184,6 @@ func main() {
 	r.Handle("/tracks/createWithComposeAI",
 		requireUserMw.ApplyFn(tracksC.CreateWithComposeAI)).
 		Methods("POST")
-
 
 	r.Handle("/tracks/createWithDJ",
 		requireUserMw.ApplyFn(tracksC.ChooseDJOptions)).
@@ -208,18 +203,16 @@ func main() {
 		requireUserMw.ApplyFn(tracksC.CreateLocalComplete)).
 		Methods("POST")
 
-
 	// edit existing
 	r.Handle("/tracks/{id:[0-9]+}/editLocalTrack",
 		// eventually take off this middleware to let the user preview the website
 		requireUserMw.ApplyFn(tracksC.EditLocal)).
-		Methods("GET").//
+		Methods("GET"). //
 		Name(controllers.EditTrack)
 	r.Handle("/tracks/{id:[0-9]+}/editDJCreatedTrack",
 		// eventually take off this middleware to let the user preview the website
 		requireUserMw.ApplyFn(tracksC.EditDJ)).
 		Methods("GET")
-
 
 	//
 	// create track
@@ -241,15 +234,13 @@ func main() {
 		requireUserMw.ApplyFn(tracksC.EditLocalSongComplete)).
 		Methods("POST")
 
-
 	// Image routes
 	imageHandler := http.FileServer(http.Dir("./userfiles/tracks/"))
-	r.PathPrefix("/userfiles/tracks/").Handler(http.StripPrefix("/userfiles/tracks/",imageHandler))
+	r.PathPrefix("/userfiles/tracks/").Handler(http.StripPrefix("/userfiles/tracks/", imageHandler))
 
 	// file routes
 	//imageHandler := http.FileServer(http.Dir("./images/"))
 	//r.PathPrefix("/images/").Handler(http.StripPrefix("/images/",imageHandler))
-
 
 	r.HandleFunc("/galleries/{id:[0-9]+}/images/{filename}/delete",
 		requireUserMw.ApplyFn(galleriesC.ImageDelete)).
@@ -260,12 +251,13 @@ func main() {
 	assetHandler = http.StripPrefix("/assets/", assetHandler)
 	r.PathPrefix("/assets/").Handler(assetHandler)
 
-
+	//
 	//
 	// API routes
 	//
+	//
 	usersCAPI := controllers.NewUsersAPI(services.User, nil)
-	tracksCAPI := controllers.NewTracksAPI(services.Track, services.File, r)
+	tracksCAPI := controllers.NewTracksAPI(services.Track, services.File, r, cfg) // Include config as parameter
 
 	//
 	//

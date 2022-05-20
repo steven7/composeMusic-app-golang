@@ -14,18 +14,30 @@ type Config struct {
 	Database PostgresConfig `json:"database"`
 	Mailgun  MailgunConfig  `json:"mailgun"`
 	Dropbox  OAuthConfig    `json:"dropbox"`
+	AWS      AWSConfig      `json:"aws_config"`
 }
 
 type PostgresConfig struct {
-	Host	 string `json:"host"`
-	Port 	 int    `json:"port"`
-	User	 string `json:"user"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	User     string `json:"user"`
 	Password string `json:"password"`
-	Name 	 string `json:"name"`
+	Name     string `json:"name"`
 }
 
+type AWSConfig struct {
+	AWSAccessKeyID    string `json:"aws_access_key_id"`
+	AWSecretAccessKey string `json:"aws_secret_access_key"`
+	AWSS3Region       string `json:"aws_s3_region"`
+	S3                AWSS3  `json:"aws_s3"`
+}
 
-func (c PostgresConfig) Dialect () string {
+type AWSS3 struct {
+	AWSS3Region string `json:"region"`
+	AWSS3Bucket string `json:"bucket"`
+}
+
+func (c PostgresConfig) Dialect() string {
 	return "postgres"
 }
 
@@ -33,20 +45,20 @@ func (c PostgresConfig) ConnectionInfo() string {
 	// We are going to provide two potential connection info
 	// strings based on whether a password is present
 	if c.Password == "" {
-		return fmt.Sprintf("host=%s port=%d user=%s dbname=%s " +
+		return fmt.Sprintf("host=%s port=%d user=%s dbname=%s "+
 			"sslmode=disable", c.Host, c.Port, c.User, c.Name)
 	}
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s " +
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s "+
 		"dbname=%s sslmode=disable", c.Host, c.Port, c.User,
 		c.Password, c.Name)
 }
 
 func DefaultConfig() Config {
 	return Config{
-		Port:     8000,
-		Env:      "dev",
-		Pepper:   "secret-random-string",
-		HMACKey:  "secret-hmac-key",
+		Port:    8000,
+		Env:     "dev",
+		Pepper:  "secret-random-string",
+		HMACKey: "secret-hmac-key",
 		// Database: DefaultPostgresConfig(),
 		Database: DefaultPostgresConfig_Docker_Dev(),
 		//Database: DefaultPostgresConfig_AWS_RDS(),
@@ -106,12 +118,24 @@ type OAuthConfig struct {
 	TokenURL string `json:"token_url"`
 }
 
-
-
-
-
 func (c Config) IsProd() bool {
-	return c.Env == "prod"
+	//return c.Env == "prod"
+	return c.GetChannel() == "prod"
+}
+
+func (c Config) IsDev() bool {
+	//return c.Env == "dev"
+	return c.GetChannel() == "dev"
+}
+
+func (c Config) IsPreProd() bool {
+	//return c.Env == "preprod"
+	return c.GetChannel() == "preprod"
+}
+
+func (c Config) GetChannel() string {
+	channel := os.Getenv("channel_env_var")
+	return channel
 }
 
 //func DefaultConfigProd() Config {
@@ -123,8 +147,6 @@ func (c Config) IsProd() bool {
 //		Database: DefaultPostgresConfigProd(),
 //	}
 //}
-
-
 
 func LoadConfig(configReq bool) Config {
 	// Open the config file
@@ -164,4 +186,3 @@ func LoadConfig(configReq bool) Config {
 	fmt.Println("Sucessfully loaded .config")
 	return c
 }
-

@@ -5,33 +5,37 @@ services:
 
   app:
     image: golang:1.15.6
+    container_name: compose-golang
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        channel: prod #dev # dev for local docker-compose. prod will be on aws
+        channel: preprod # dev # prod #dev # dev for local docker-compose. prod will be on aws
     ports:
       - "8000:8000"
     restart: always #unless-stopped
-    depends_on:
-      - db
+#    depends_on:
+#      - db
 
   compose:
     image: python:3.8-slim-buster
+    container_name: compose-python-ml
     build:
-      context: /Users/steve/Documents/Development/Flask/Compose
+      context: /Users/steve/Documents/Dev/Flask/ComposeFlask/composeMusic-ML-python
       dockerfile: Dockerfile
       args:
-        channel: prod #dev # dev for local docker-compose. prod will be on aws
+        channel: preprod # dev # prod #dev # dev for local docker-compose. prod will be on aws
     ports:
-      - "5000:5000"
+      - "8010:8010"
     restart: always #unless-stopped
 
   db:
     image: postgres
+    container_name: compose-dev-db
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+#      - "5432:5432"
+      - "5421:5421"

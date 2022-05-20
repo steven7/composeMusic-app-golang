@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/steven7/go-createmusic/go/config"
 	"github.com/steven7/go-createmusic/go/context"
 	"github.com/steven7/go-createmusic/go/models"
 	"github.com/steven7/go-createmusic/go/views"
@@ -19,11 +20,11 @@ import (
 )
 
 const (
-	IndexTracks    = "index_tracks"
-	ShowTrack      = "show_track"
-	CreateTrack    = "create_track"
-	EditTrack      = "edit_track"
-	PlayTrack      = "play_track"
+	IndexTracks = "index_tracks"
+	ShowTrack   = "show_track"
+	CreateTrack = "create_track"
+	EditTrack   = "edit_track"
+	PlayTrack   = "play_track"
 	// EditTrackLocal = "edit_tracks"
 	// EditTrackDJ    = "edit_tracks"
 	// maxMultipartMem = 1 << 20 // 1 megabyte
@@ -33,49 +34,50 @@ const (
 
 func NewTracksController(ts models.TrackService, fs models.FileService, r *mux.Router) *TrackController {
 	return &TrackController{
-		ChooseTypeView:   	   views.NewView("bootstrap", "tracks/chooseCreateTrackType"),
+		ChooseTypeView: views.NewView("bootstrap", "tracks/chooseCreateTrackType"),
 		// dj
-		ChooseDJOptionsView:   views.NewView("bootstrap", "tracks/chooseDJOptions"),
-		CreateDJWorkingView:   views.NewView("bootstrap", "tracks/createDJWorking"),
-		CreateDJCompleteView:  views.NewView("bootstrap", "tracks/createDJComplete"),
+		ChooseDJOptionsView:  views.NewView("bootstrap", "tracks/chooseDJOptions"),
+		CreateDJWorkingView:  views.NewView("bootstrap", "tracks/createDJWorking"),
+		CreateDJCompleteView: views.NewView("bootstrap", "tracks/createDJComplete"),
 		// local
-		CreateLocalView:   	   views.NewView("bootstrap", "tracks/createLocalTrack"),
-		EditLocalView:     	   views.NewView("bootstrap", "tracks/editLocalTrack"),
+		CreateLocalView: views.NewView("bootstrap", "tracks/createLocalTrack"),
+		EditLocalView:   views.NewView("bootstrap", "tracks/editLocalTrack"),
 		//EditView:              views.NewView("bootstrap", "tracks/editTracks"),
-		IndexView:         	   views.NewView("bootstrap", "tracks/index"),
-		ShowView:          	   views.NewView("bootstrap", "tracks/showTracks"),
-		PlayView:			   views.NewView("bootstrap", "tracks/playTrack"),
-		ts:                	   ts,
-		fs: 				   fs,
+		IndexView: views.NewView("bootstrap", "tracks/index"),
+		ShowView:  views.NewView("bootstrap", "tracks/showTracks"),
+		PlayView:  views.NewView("bootstrap", "tracks/playTrack"),
+		ts:        ts,
+		fs:        fs,
 		//is:                	   is,
 		//mfs: 				   mfs,
-		r:                 	   r,
+		r: r,
 	}
 }
 
 type TrackController struct {
-	ChooseTypeView   	  *views.View
-	ChooseDJOptionsView	  *views.View
-	CreateDJWorkingView   *views.View
-	CreateDJCompleteView  *views.View
-	CreateLocalView  	  *views.View
-	EditLocalView     	  *views.View
+	ChooseTypeView       *views.View
+	ChooseDJOptionsView  *views.View
+	CreateDJWorkingView  *views.View
+	CreateDJCompleteView *views.View
+	CreateLocalView      *views.View
+	EditLocalView        *views.View
 	//EditDJCreatedView     *views.View
 	//EditView              *views.View
-	IndexView         	  *views.View
-	ShowView           	  *views.View
-	PlayView           	  *views.View
-	ts                	  models.TrackService
-	fs                	  models.FileService
+	IndexView *views.View
+	ShowView  *views.View
+	PlayView  *views.View
+	ts        models.TrackService
+	fs        models.FileService
 	//is                	  models.ImageService
 	//mfs					  models.MusicFileService
-	r                 	  *mux.Router
+	r *mux.Router
+	c config.Config
 }
 
 type TrackForm struct {
 	Title      string `schema:"title"`
-	Musicfile  string   `schema:"musicfile"`
-	CoverImage string   `schema:"image"`
+	Musicfile  string `schema:"musicfile"`
+	CoverImage string `schema:"image"`
 }
 
 // GET /tracks
@@ -118,7 +120,6 @@ func (t *TrackController) Play(w http.ResponseWriter, r *http.Request) {
 	t.PlayView.Render(w, r, vd)
 }
 
-
 // POST /tracks
 func (t *TrackController) Create(w http.ResponseWriter, r *http.Request) {
 	var vd views.Data
@@ -134,7 +135,7 @@ func (t *TrackController) Create(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(user)
 
-	track := models.Track {
+	track := models.Track{
 		Title:  form.Title,
 		UserID: user.ID,
 	}
@@ -162,7 +163,7 @@ func (t *TrackController) Create(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url.Path, http.StatusFound)
 }
 
-	// POST /tracks/createWithDJ
+// POST /tracks/createWithDJ
 func (t *TrackController) ChooseDJOptions(w http.ResponseWriter, r *http.Request) {
 
 	var vd views.Data
@@ -206,16 +207,11 @@ func (t *TrackController) CreateWithDJ(w http.ResponseWriter, r *http.Request) {
 
 func (t *TrackController) CreateWithDJWorking(w http.ResponseWriter, r *http.Request) {
 
-
 	var vd views.Data
-
-
 
 	t.CreateDJWorkingView.Render(w, r, vd)
 
 	// timer
-
-
 
 	// wait (time is in seconds)
 	t1 := time.NewTimer(5 * time.Second)
@@ -234,11 +230,10 @@ func (t *TrackController) CreateWithDJWorking(w http.ResponseWriter, r *http.Req
 
 		form := url.Values{}
 		// req, err :=
-			http.NewRequest("POST", "/tracks/createWithDJ/Complete", strings.NewReader(form.Encode()))
+		http.NewRequest("POST", "/tracks/createWithDJ/Complete", strings.NewReader(form.Encode()))
 
 		t.CreateDJCompleteView.Render(w, r, vd)
 	}()
-
 
 	//track, err := t.trackByID(w, r)
 	//if err != nil {
@@ -262,7 +257,7 @@ func (t *TrackController) CreateWithDJComplete(w http.ResponseWriter, r *http.Re
 	var vd views.Data
 
 	user := context.User(r.Context())
-	track := models.Track {
+	track := models.Track{
 		Title:  "Cool DJ Song!!",
 		UserID: user.ID,
 	}
@@ -272,7 +267,7 @@ func (t *TrackController) CreateWithDJComplete(w http.ResponseWriter, r *http.Re
 	t.CreateDJCompleteView.Render(w, r, vd)
 }
 
-	// POST /tracks/newLocal
+// POST /tracks/newLocal
 // GET /galleries/:id/edit
 /*
 func (t *TrackController) CreateLocal(w http.ResponseWriter, r *http.Request) {
@@ -323,7 +318,7 @@ func (t *TrackController) CreateLocalComplete(w http.ResponseWriter, r *http.Req
 		UserID: user.ID,
 	}
 
-
+	// Database entry
 	if err := t.ts.Create(&track); err != nil {
 		vd.SetAlert(err)
 		fmt.Println("CreateLocal  ", err)
@@ -331,13 +326,12 @@ func (t *TrackController) CreateLocalComplete(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-
 	//
 	// Media files
 	//
 
 	//
-	// music file
+	// Music file
 	//
 	for _, h := range r.MultipartForm.File["musicfile"] {
 
@@ -348,7 +342,7 @@ func (t *TrackController) CreateLocalComplete(w http.ResponseWriter, r *http.Req
 			return
 		}
 		defer musicfile.Close()
-		err = t.fs.Create(track.ID, musicfile, h.Filename, models.FileTypeMusic)
+		err = t.fs.Create(track.ID, musicfile, h.Filename, models.FileTypeMusic, config.Config{})
 		if err != nil {
 			vd.SetAlert(err)
 			t.CreateLocalView.Render(w, r, vd)
@@ -367,15 +361,13 @@ func (t *TrackController) CreateLocalComplete(w http.ResponseWriter, r *http.Req
 			return
 		}
 		defer imagefile.Close()
-		err = t.fs.Create(track.ID, imagefile, h.Filename, models.FileTypeImage)
+		err = t.fs.Create(track.ID, imagefile, h.Filename, models.FileTypeImage, config.Config{})
 		if err != nil {
 			vd.SetAlert(err)
 			t.CreateLocalView.Render(w, r, vd)
 			return
 		}
 	}
-
-
 
 	//url, err := g.r.Get(ShowGallery).URL("id",
 	//	strconv.Itoa(int(gallery.ID)))
@@ -472,12 +464,12 @@ func (t *TrackController) MusicUpload(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("mfs create")
 		// Create a musicfile object which also creates destination file on the specifed location
 		// fmt.Println("trackC - music upload - " + string(file.) )
-		fmt.Println("trackC - music upload - " + string(track.ID) )
+		fmt.Println("trackC - music upload - " + string(track.ID))
 		fmt.Println(track.ID)
 		fmt.Println("trackC - music upload - " + f.Filename)
 
 		//err = t.mfs.Create(track.ID, file, f.Filename)
-		err = t.fs.Create(track.ID, file, f.Filename, models.FileTypeMusic)
+		err = t.fs.Create(track.ID, file, f.Filename, models.FileTypeMusic, config.Config{})
 		if err != nil {
 			vd.SetAlert(err)
 			t.EditLocalView.Render(w, r, vd)
@@ -533,7 +525,7 @@ func (t *TrackController) ImageUpload(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("ImageUpload  ", f)
 		// Create a image which also creates destination file
 		// err = t.is.Create(track.ID, file, f.Filename)
-		err = t.fs.Create(track.ID, file, f.Filename, models.FileTypeImage)
+		err = t.fs.Create(track.ID, file, f.Filename, models.FileTypeImage, config.Config{})
 		if err != nil {
 			vd.SetAlert(err)
 			fmt.Println("ImageUpload  ", err)
@@ -683,14 +675,14 @@ func (t *TrackController) ImageViaLink(w http.ResponseWriter, r *http.Request) {
 			}
 			defer resp.Body.Close()
 			pieces := strings.Split(url, "/")
-			filename := pieces[len(pieces) - 1]
+			filename := pieces[len(pieces)-1]
 			//if err := t.is.Create(track.ID, resp.Body, filename); err != nil {
 			//	panic(err)
 			//}
-			if err := t.fs.Create(track.ID, resp.Body, filename, models.FileTypeImage); err != nil {
+			if err := t.fs.Create(track.ID, resp.Body, filename, models.FileTypeImage, config.Config{}); err != nil {
 				panic(err)
 			}
-		} (fileURL) // () meanes execute go routine
+		}(fileURL) // () meanes execute go routine
 	}
 	wg.Wait()
 
@@ -736,7 +728,7 @@ func (t *TrackController) ImageViaLink(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /tracks/:id/
-func (t *TrackController) trackByID(w http.ResponseWriter, r *http.Request) (*models.Track , error){
+func (t *TrackController) trackByID(w http.ResponseWriter, r *http.Request) (*models.Track, error) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 	id, err := strconv.Atoi(idStr)
@@ -758,18 +750,12 @@ func (t *TrackController) trackByID(w http.ResponseWriter, r *http.Request) (*mo
 	}
 
 	// music file
-	musicfile, _ := t.fs.ByTrackID(track.ID, models.FileTypeMusic)
+	musicfile, _ := t.fs.ByTrackID(track.ID, models.FileTypeMusic, track.MusicFilename, config.Config{})
 	track.MusicFile = musicfile
 
 	// cover method
-	image, _ := t.fs.ByTrackID(track.ID, models.FileTypeImage)
+	image, _ := t.fs.ByTrackID(track.ID, models.FileTypeImage, track.CoverImageFilename, config.Config{})
 	track.CoverImage = image
-
-	// list method
-	//imagelist, _ := t.is.ListByTrackID(track.ID)
-	//track.Images = imagelist
-
-	// ^^^ pick one
 
 	return track, nil
 }

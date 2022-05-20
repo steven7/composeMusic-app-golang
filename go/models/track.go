@@ -4,28 +4,23 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-
 // Track is used to represent images stored in a Gallery.
 // The sound file is NOT stored in the database, and instead
 // references data stored on disk.
 type Track struct {
 	gorm.Model
-	UserID 		    	 uint       `gorm:"not_null;index"  json:"userID"`
-	Title  		    	 string     `gorm:"not_null"  json:"title"`
-	Artist  	    	 string     `gorm:"-"  json:"artist"`
-	lengthInSeconds 	 int        `gorm:"-"  json:"lengthInSeconds"`
-	Description     	 string	    `gorm:"not_null"  json:"description"`
-	CoverImage      	 File  	    `gorm:"-"  json:"coverImage"`
-	MusicFile  	    	 File 	    `gorm:"-"  json:"musicFile"`
-	CoverImageFilename   string     `gorm:"-"  json:"coverImageFilename"`
-	MusicFileFilename    string 	`gorm:"-"  json:"musicFileFilename"`
-	CoverImageURL   	 string     `gorm:"-"  json:"coverImageURL"` /// I think this is correct with client side render
-	MusicFileURL    	 string 	`gorm:"-"  json:"musicFileURL"`  /// I think this is correct with client side render
-	Filename  	    	 string	    `gorm:"not_null"  json:"filename"`
-	Images 		    	 []Image    `gorm:"-"`
+	UserID             uint    `gorm:"not_null;index"  json:"userID"`
+	Title              string  `gorm:"not_null"  json:"title"`
+	Artist             string  `gorm:"-"  json:"artist"`
+	lengthInSeconds    int     `gorm:"-"  json:"lengthInSeconds"`
+	Description        string  `gorm:"not_null"  json:"description"`
+	CoverImage         File    `gorm:"-"  json:"coverImage"` // Take out
+	MusicFile          File    `gorm:"-"  json:"musicFile"`  // Take out
+	CoverImageFilename string  `gorm:"not_null"  json:"coverImageFilename"`
+	MusicFilename      string  `gorm:"not_null"  json:"musicFilename"`
+	Filename           string  `gorm:"not_null"  json:"filename"`
+	Images             []Image `gorm:"-"`
 }
-
-
 
 func NewTrackService(db *gorm.DB) TrackService {
 	return &trackService{
@@ -65,7 +60,6 @@ type trackValidator struct {
 	TrackDB
 }
 
-
 var _ TrackDB = &trackGorm{}
 
 type trackGorm struct {
@@ -104,7 +98,6 @@ func (tg *trackGorm) Delete(id uint) error {
 	return tg.db.Where("id = ?", id).Delete(&track).Error
 }
 
-
 //
 //
 //  Validator functions
@@ -114,7 +107,7 @@ func (tg *trackGorm) Delete(id uint) error {
 func (tv *trackValidator) Create(track *Track) error {
 	err := runTrackValFns(track,
 		tv.userIDRequired) // ,
-		// tv.titleRequired)
+	// tv.titleRequired)
 	if err != nil {
 		return err
 	}
@@ -161,7 +154,6 @@ func (tv *trackValidator) Delete(id uint) error {
 	return tv.TrackDB.Delete(track.ID)
 }
 
-
 type trackValFn func(*Track) error
 
 func runTrackValFns(track *Track, fns ...trackValFn) error {
@@ -173,9 +165,9 @@ func runTrackValFns(track *Track, fns ...trackValFn) error {
 	return nil
 }
 
-func (t *Track) getCoverImage() File {
-	return t.CoverImage
-}
+//func (t *Track) getCoverImageFileName() string {
+//	return t.CoverImageFilename
+//}
 
 func (t *Track) ImagesSplitN(n int) [][]Image {
 	ret := make([][]Image, n)

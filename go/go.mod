@@ -3,6 +3,11 @@ module github.com/steven7/go-createmusic/go
 go 1.15
 
 require (
+	github.com/aws/aws-sdk-go v1.43.12 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.14.0 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.14.0 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.10.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.25.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/mux v1.8.0

@@ -4,19 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/steven7/go-createmusic/go/config"
 	"github.com/steven7/go-createmusic/go/models"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 )
 
-func NewTracksAPI(ts models.TrackService, fs models.FileService, r *mux.Router) *TrackController {
+func NewTracksAPI(ts models.TrackService, fs models.FileService, r *mux.Router, c config.Config) *TrackController {
 	return &TrackController{
-		ts:                	   ts,
-		fs: 				   fs,
+		ts: ts,
+		fs: fs,
 		//is:                	   is,
 		//mfs: 				   mfs,
-		r:                 	   r,
+		r: r,
+		c: c,
 	}
 }
 
@@ -41,12 +44,12 @@ func (t *TrackController) IndexWithAPI(w http.ResponseWriter, r *http.Request) {
 
 	tracks, err := t.ts.ByUserID(uint(uintUserID))
 	fmt.Println("json")
-	for _ , track := range tracks {
+	for _, track := range tracks {
 		fmt.Println(track)
 	}
 
 	if err != nil {
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error fetching tracks for user",
 			Detail: err.Error(),
 		}
@@ -57,7 +60,6 @@ func (t *TrackController) IndexWithAPI(w http.ResponseWriter, r *http.Request) {
 	WriteJson(w, tracks)
 
 }
-
 
 // GET /api/tracks/one
 func (t *TrackController) GetTrackWithAPI(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +74,7 @@ func (t *TrackController) GetTrackWithAPI(w http.ResponseWriter, r *http.Request
 	track, err := t.ts.ByID(uint(uintTrackID))
 	// if error choose way to respond
 	if err != nil {
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error fetching one track",
 			Detail: err.Error(),
 		}
@@ -105,7 +107,6 @@ func (t *TrackController) GetTrackWithAPI(w http.ResponseWriter, r *http.Request
 	WriteJson(w, track)
 }
 
-
 // GET /api/tracks/one/coverimage
 func (t *TrackController) GetTrackCoverFileWithAPI(w http.ResponseWriter, r *http.Request) {
 
@@ -119,13 +120,14 @@ func (t *TrackController) GetTrackCoverFileWithAPI(w http.ResponseWriter, r *htt
 	}
 
 	uintTrackID := info.TrackID
+	filename := info.FileName
 
 	fmt.Println(uintTrackID)
 
 	// cover image
-	coverimage, err := t.fs.ByTrackID(uint(uintTrackID), models.FileTypeImage)
+	coverimage, err := t.fs.ByTrackID(uint(uintTrackID), models.FileTypeImage, filename, t.c)
 	if err != nil {
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error fetching the cover image file",
 			Detail: err.Error(),
 		}
@@ -142,7 +144,6 @@ func (t *TrackController) GetTrackMusicFileWithAPI(w http.ResponseWriter, r *htt
 
 	fmt.Println("GetTrackMusicFileWithAPI")
 
-
 	var info models.OneTrackJson
 	err := ParseJSONParameters(w, r, &info)
 	if err != nil {
@@ -151,14 +152,13 @@ func (t *TrackController) GetTrackMusicFileWithAPI(w http.ResponseWriter, r *htt
 	}
 
 	uintTrackID := info.TrackID
-
-	fmt.Println(uintTrackID)
+	filename := info.FileName
 
 	// music file
 
-	musicfile, err := t.fs.ByTrackID(uint(uintTrackID), models.FileTypeMusic)
+	musicfile, err := t.fs.ByTrackID(uint(uintTrackID), models.FileTypeMusic, filename, t.c)
 	if err != nil {
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error fetching the track file",
 			Detail: err.Error(),
 		}
@@ -180,14 +180,13 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 	r.ParseMultipartForm(256)
 
 	if r.MultipartForm == nil {
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error creating track",
 			Detail: "Multipart/form data not correctly included in request.",
 		}
 		WriteJson(w, errorData)
 		return
 	}
-
 
 	f := r.MultipartForm
 
@@ -200,15 +199,56 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 	artist := f.Value["artist"][0]
 	desc := f.Value["desc"][0]
 
+	fmt.Println("the multipart form %s", f)
+
+	///
+	///
+	// Get filenames from headers first.
 	///
 	///
 
-	// Create track object in memory. it will stored once music file and cover get processed.
-	track := models.Track {
-		Title:  title, //trackData.Track.Title,
-		Artist: artist,
-		Description: desc, //"Created with create local track api endpoint",
-		UserID: uint(userID), //trackData.UserID, //trackData.User.ID,
+	//
+	//
+	// cover image
+	//
+	//
+
+	imgArr := f.File["coverimage"]
+	var imageHeader *multipart.FileHeader
+	var coverImageFileName string = ""
+	if f != nil && f.File["coverimage"] != nil && len(imgArr) > 0 {
+		imageHeader = f.File["coverimage"][0]
+		coverImageFileName = imageHeader.Filename
+	}
+
+	//
+	//
+	// music file
+	//
+	//
+
+	if f == nil || f.File["musicfile"] == nil || len(f.File["musicfile"]) == 0 {
+		errorData := models.Error{
+			Title:  "Error creating track",
+			Detail: "A valid music file must be included",
+		}
+		WriteJson(w, errorData)
+		return
+	}
+
+	musicHeader := f.File["musicfile"][0]
+	musicfile, err := musicHeader.Open()
+
+	musicFileName := musicHeader.Filename
+
+	// Create track object in memory. It will be stored once music file and cover get processed.
+	track := models.Track{
+		Title:              title, //trackData.Track.Title,
+		Artist:             artist,
+		Description:        desc,         //"Created with create local track api endpoint",
+		UserID:             uint(userID), //trackData.UserID, //trackData.User.ID,
+		CoverImageFilename: coverImageFileName,
+		MusicFilename:      musicFileName,
 	}
 
 	//
@@ -219,7 +259,7 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 
 	if err := t.ts.Create(&track); err != nil {
 		// app.serverError(w, err)
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error creating track",
 			Detail: err.Error(),
 		}
@@ -227,39 +267,26 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	///
+	///
+	// Write files once the track object is created.
+	///
+	///
+
 	//
-	//
-	// music file
-	//
- 	//
-
-	if f == nil || f.File["musicfile"] == nil || len(f.File["musicfile"]) == 0 {
-		errorData := models.Error {
-			Title:  "Error creating track",
-			Detail: "A valid music file must be included",
-		}
-		WriteJson(w, errorData)
-		return
-	}
-
-	musicHeader := f.File["musicfile"][0]
-
-	musicfile, err := musicHeader.Open()
-	fmt.Println("Creating for track with musicfile ", musicfile)
-
 	//
 	// cover image
 	//
-	imgArr := f.File["coverimage"]
+	//
 
-	if f != nil && f.File["coverimage"] != nil && len(imgArr) > 0 {
-
-		imageHeader := f.File["coverimage"][0]
-		fmt.Println(imageHeader)
+	//
+	// Headers defined earlier above
+	//
+	if imageHeader != nil {
 
 		imagefile, err := imageHeader.Open()
 		if err != nil {
-			errorData := models.Error {
+			errorData := models.Error{
 				Title:  "Error with cover image",
 				Detail: err.Error(),
 			}
@@ -268,9 +295,9 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 		}
 		defer imagefile.Close()
 
-		err = t.fs.Create(track.ID, imagefile, imageHeader.Filename, models.FileTypeImage)
+		err = t.fs.Create(track.ID, imagefile, imageHeader.Filename, models.FileTypeImage, t.c)
 		if err != nil {
-			errorData := models.Error {
+			errorData := models.Error{
 				Title:  "Error uploading cover image",
 				Detail: err.Error(),
 			}
@@ -281,8 +308,24 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 
 	}
 
+	//
+	//
+	// music file
+	//
+	//
+
+	err = t.fs.Create(track.ID, musicfile, musicFileName, models.FileTypeMusic, t.c)
 	if err != nil {
-		errorData := models.Error {
+		errorData := models.Error{
+			Title:  "Error uploading file",
+			Detail: err.Error(),
+		}
+		WriteJson(w, errorData)
+		return
+	}
+
+	if err != nil {
+		errorData := models.Error{
 			Title:  "Error with uploaded file",
 			Detail: err.Error(),
 		}
@@ -290,19 +333,6 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	defer musicfile.Close()
-
-
-	err = t.fs.Create(track.ID, musicfile, musicHeader.Filename, models.FileTypeMusic)
-	if err != nil {
-		errorData := models.Error {
-			Title:  "Error uploading file",
-			Detail: err.Error(),
-		}
-		WriteJson(w, errorData)
-		return
-		track.MusicFileFilename = musicHeader.Filename
-		track.MusicFileURL = musicHeader.Filename
-	}
 
 	//
 	//
@@ -312,7 +342,7 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 
 	if err := t.ts.Update(&track); err != nil {
 		// app.serverError(w, err)
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error creating track",
 			Detail: err.Error(),
 		}
@@ -324,7 +354,7 @@ func (t *TrackController) CreateLocalWithAPI(w http.ResponseWriter, r *http.Requ
 	createLocalTrackResponse := models.CreateLocalTrackResponseJson{
 		Success: true,
 		Message: "Track successfully created!!",
-		Track: track,
+		Track:   track,
 	}
 
 	WriteJson(w, createLocalTrackResponse)
@@ -367,18 +397,17 @@ func (t *TrackController) CreateWithComposeAI(w http.ResponseWriter, r *http.Req
 
 	type Dictionary map[string]interface{}
 
-	jsonDict := Dictionary {
-		"userID": string(userID),
-		"title":  title,
-		"artist": artist,
-		"desc":   desc,
+	jsonDict := Dictionary{
+		"userID":       string(userID),
+		"title":        title,
+		"artist":       artist,
+		"desc":         desc,
 		"compose_type": composeType,
 	}
 
 	body, _ := json.Marshal(jsonDict)
 
 	// Post to Compose machine learning service
-
 
 	// Make channel
 	composeChan := make(chan *http.Response)
@@ -403,7 +432,7 @@ func (t *TrackController) CreateWithComposeAI(w http.ResponseWriter, r *http.Req
 
 	createLocalTrackResponse := models.CreateLocalTrackResponseJson{
 		Success: success,
-		Title: responseTitle,
+		Title:   responseTitle,
 		Message: string(bytes),
 	}
 
@@ -425,7 +454,6 @@ func (t *TrackController) CreateDJ_Jazz_WithAPI(w http.ResponseWriter, r *http.R
 
 	//userId := 2 // default text id
 	//trackId := 10 // track 10 is 0x00ss.jpg cover image and Tchaikovsky-Waltz-op39-no8 file
-
 
 	//cmd := exec.Command("script.py")
 	//
@@ -454,7 +482,7 @@ func (t *TrackController) DeleteTrackWithAPI(w http.ResponseWriter, r *http.Requ
 	// Cover Image
 
 	// Find cover image first before deleting it. Consider changing this later.
-	coverimage, err := t.fs.ByTrackID(uiTrackID, models.FileTypeImage)
+	coverimage, err := t.fs.ByTrackID(uiTrackID, models.FileTypeImage, "", t.c)
 	// Delete cover image if found.
 	if err = t.fs.Delete(&coverimage, models.FileTypeImage); err != nil {
 		//errorData := models.Error {
@@ -466,25 +494,23 @@ func (t *TrackController) DeleteTrackWithAPI(w http.ResponseWriter, r *http.Requ
 		additionalInfo += " Could not find cover image file to delete."
 	}
 
-
 	// Music file
 
 	// Find music file first before deleting it. Consider changing this later.
-	musicfile, err := t.fs.ByTrackID(uiTrackID, models.FileTypeMusic)
+	musicfile, err := t.fs.ByTrackID(uiTrackID, models.FileTypeMusic, "", t.c)
 	// Delete music file if found.
 	if err = t.fs.Delete(&musicfile, models.FileTypeMusic); err != nil {
-	//	errorData := models.Error {
-	//		Title:  "Error deleting the track file",
-	//		Detail: err.Error(),
-	//	}
-	//	WriteJson(w, errorData)
-	//	return
+		//	errorData := models.Error {
+		//		Title:  "Error deleting the track file",
+		//		Detail: err.Error(),
+		//	}
+		//	WriteJson(w, errorData)
+		//	return
 		additionalInfo += " Could not find music file to delete."
 	}
 
-
 	if err := t.ts.Delete(uiTrackID); err != nil {
-		errorData := models.Error {
+		errorData := models.Error{
 			Title:  "Error deleting track metadata. " + additionalInfo,
 			Detail: err.Error(),
 		}

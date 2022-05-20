@@ -1,7 +1,7 @@
 # No statis files should be tracked with git.
 go/images/
 go/userfiles/
-
+docker-compose.yml
 
 # Binaries for programs and plugins
 *.exe
@@ -15,6 +15,9 @@ go/userfiles/
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# AWS credentials should not be on git
+*.aws
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
