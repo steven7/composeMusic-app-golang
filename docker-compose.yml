@@ -3,39 +3,42 @@ version: '3.8'
 # this is the dev setup. docker-compose won't be used in prod
 services:
 
-  app:
-    image: golang:1.15.6
-    container_name: compose-golang
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        channel: preprod # dev # prod #dev # dev for local docker-compose. prod will be on aws
-    ports:
-      - "8000:8000"
-    restart: always #unless-stopped
+#  app:
+#    image: golang:1.15.6
+#    container_name: compose-golang
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#      args:
+#        channel: prod #preprod # dev # prod #dev # dev for local docker-compose. prod will be on aws
+#    ports:
+#      - "8000:8000"
+#    restart: always #unless-stopped
 #    depends_on:
 #      - db
 
   compose:
-    image: python:3.8-slim-buster
+    platform: linux/x86_64
+#    platform: linux/amd64
+    image: python:3.10.2-slim-buster
+#    image: python:3.8-slim-buster
     container_name: compose-python-ml
     build:
       context: /Users/steve/Documents/Dev/Flask/ComposeFlask/composeMusic-ML-python
       dockerfile: Dockerfile
       args:
-        channel: preprod # dev # prod #dev # dev for local docker-compose. prod will be on aws
+        channel: prod #preprod # dev # prod #dev # dev for local docker-compose. prod will be on aws
     ports:
       - "8010:8010"
     restart: always #unless-stopped
 
-  db:
-    image: postgres
-    container_name: compose-dev-db
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-#      - "5432:5432"
-      - "5421:5421"
+#  db:
+#    image: postgres
+#    container_name: compose-dev-db
+#    environment:
+#      POSTGRES_DB: postgres
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: postgres
+#    ports:
+##      - "5432:5432"
+#      - "5421:5421"
