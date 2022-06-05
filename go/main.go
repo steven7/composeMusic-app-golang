@@ -9,6 +9,8 @@ import (
 	"github.com/steven7/go-createmusic/go/controllers"
 	"github.com/steven7/go-createmusic/go/middleware"
 	"github.com/steven7/go-createmusic/go/models"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 )
@@ -26,7 +28,7 @@ func main() {
 		"provided before the application starts.")
 	flag.Parse()
 
-	fmt.Printf("___________________ we are in %s channel ___________________ %b", channel, isProd)
+	fmt.Printf("___________________ we are in %s channel ___________________ %b\n", channel, isProd)
 
 	cfg := config.LoadConfig(*boolPtr)
 	dbCfg := cfg.Database
@@ -45,6 +47,15 @@ func main() {
 		models.WithFile(),
 		models.WithOauth(),
 	)
+
+	files, err := ioutil.ReadDir("./")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		fmt.Println(f.Name())
+	}
 
 	if err != nil {
 		panic(err)

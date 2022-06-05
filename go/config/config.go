@@ -147,11 +147,12 @@ func (c Config) GetChannel() string {
 //		Database: DefaultPostgresConfigProd(),
 //	}
 //}
-
+//AWS_ACCESS_KEY_ID
 func LoadConfig(configReq bool) Config {
 	// Open the config file
-	f, err := os.Open(".config") //
+	f, err := os.Open(".config")
 	if err != nil {
+		fmt.Println("Error opening .config:\n", err)
 		if configReq {
 			//panic(err)
 			// put the below info into the .config and delete.
@@ -165,6 +166,7 @@ func LoadConfig(configReq bool) Config {
 		return DefaultConfig()
 		// return DefaultConfigProd() // this is a stopgap for the moment
 	}
+
 	fmt.Println("Using the .config file...")
 	// If we opened the config file successfully we are going
 	// to create a Config variable to load it into.

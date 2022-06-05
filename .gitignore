@@ -1,7 +1,11 @@
+# No confog credentials should be on git.
+.config
+
 # No statis files should be tracked with git.
 go/images/
 go/userfiles/
-go/.config
+
+# Docker compose is for local testing only
 docker-compose.yml
 
 # Binaries for programs and plugins

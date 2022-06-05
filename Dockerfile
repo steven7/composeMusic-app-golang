@@ -1,6 +1,6 @@
 # Official docker container image
-FROM --platform=linux/amd64 golang:1.15.6
-#FROM golang:1.15.6
+FROM --platform=linux/x86_64 golang:1.15.10
+#FROM golang:1.15.10
 
 # development channel. Either dev, preprod or prod.
 # docker-compose will pass in dev channel.
@@ -25,6 +25,9 @@ COPY go/go.mod go/go.sum ./
 
 # download go mod dependencies
 RUN go mod download
+
+# This was needed to fix a bug for some reason
+COPY .config .
 
 # copy the rest of the code
 COPY go .

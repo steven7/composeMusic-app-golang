@@ -16,10 +16,8 @@ func NewTracksAPI(ts models.TrackService, fs models.FileService, r *mux.Router, 
 	return &TrackController{
 		ts: ts,
 		fs: fs,
-		//is:                	   is,
-		//mfs: 				   mfs,
-		r: r,
-		c: c,
+		r:  r,
+		c:  c,
 	}
 }
 
@@ -62,6 +60,7 @@ func (t *TrackController) IndexWithAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /api/tracks/one
+// Gets track metadata. The files will be their own donloads.
 func (t *TrackController) GetTrackWithAPI(w http.ResponseWriter, r *http.Request) {
 
 	//

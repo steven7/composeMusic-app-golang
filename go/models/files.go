@@ -37,11 +37,22 @@ var awsS3Client *s3.Client
 
 func s3Client(c config.Config) *s3.Client {
 
+	log.Printf("config     \n", c)
+	log.Printf("config AWS \n", c.AWS)
+
+	aws_access_key_cfg := c.AWS.AWSAccessKeyID
+	aws_secret_key_cfg := c.AWS.AWSecretAccessKey
+	log.Printf("aws access key cfg \n", aws_access_key_cfg)
+	log.Printf("aws secret key cfg \n", aws_secret_key_cfg)
+
 	// Get values from .config file
-	aws_access_key := c.AWS.AWSAccessKeyID
-	aws_secret_key := c.AWS.AWSecretAccessKey
-	aws_s3_region := c.AWS.AWSS3Region
+	aws_access_key := "AKIARUNBREKX3D7PJFJB"                     //c.AWS.AWSAccessKeyID
+	aws_secret_key := "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" //c.AWS.AWSecretAccessKey
+	aws_s3_region := c.AWS.S3.AWSS3Region
 	AWS_S3_BUCKET = c.AWS.S3.AWSS3Bucket
+
+	log.Printf("aws access key     \n", aws_access_key)
+	log.Printf("aws secret key     \n", aws_secret_key)
 
 	// Create aws config
 	creds := credentials.NewStaticCredentialsProvider(aws_access_key, aws_secret_key, "")
