@@ -1,6 +1,6 @@
 # Official docker container image
-FROM --platform=linux/x86_64 golang:1.15.10
-#FROM golang:1.15.10
+FROM --platform=linux/x86_64 golang:1.15.11
+#FROM golang:1.15.11
 
 # development channel. Either dev, preprod or prod.
 # docker-compose will pass in dev channel.

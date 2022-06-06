@@ -9,8 +9,6 @@ import (
 	"github.com/steven7/go-createmusic/go/controllers"
 	"github.com/steven7/go-createmusic/go/middleware"
 	"github.com/steven7/go-createmusic/go/models"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 )
@@ -48,15 +46,6 @@ func main() {
 		models.WithOauth(),
 	)
 
-	files, err := ioutil.ReadDir("./")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, f := range files {
-		fmt.Println(f.Name())
-	}
-
 	if err != nil {
 		panic(err)
 	}
@@ -77,21 +66,6 @@ func main() {
 	galleriesC := controllers.NewGalleries(services.Gallery, services.Image, r)
 	//tracksC := controllers.NewTracksController(services.Track, services.Image, services.MusicFile, r)
 	tracksC := controllers.NewTracksController(services.Track, services.File, r)
-
-	//
-	/*
-		configs := make(map[string]*oauth2.Config)
-		configs[models.OAuthDropbox] = &oauth2.Config{
-			ClientID: 	  cfg.Dropbox.ID,
-			ClientSecret: cfg.Dropbox.Secret,
-			Endpoint: oauth2.Endpoint{
-				AuthURL  :  cfg.Dropbox.AuthURL,
-				TokenURL :  cfg.Dropbox.TokenURL,
-			},
-			RedirectURL: "http://localhost:3000/oauth/dropbox/callback",
-		}
-		oauthsC := controllers.NewOAuths(services.OAuth ,configs)
-	*/
 
 	//
 	//

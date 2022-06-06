@@ -24,8 +24,6 @@ func NewTracksAPI(ts models.TrackService, fs models.FileService, r *mux.Router, 
 // GET /api/tracks/index
 func (t *TrackController) IndexWithAPI(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("IndexWithAPI!!")
-
 	//
 	// validate jwt token is done with middleware
 	//

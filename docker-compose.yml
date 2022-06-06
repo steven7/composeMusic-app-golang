@@ -4,7 +4,7 @@ version: '3.8'
 services:
 
   app:
-    image: golang:1.15.10
+    image: golang:1.15.11
     container_name: compose-golang
     build:
       context: .
@@ -19,17 +19,17 @@ services:
 
 
   # use command to build the image for aws:  docker build --platform=linux/amd64 -t compose-ml .
-  compose:
-    image: python:3.8-slim-buster
-    container_name: compose-python-ml
-    build:
-      context: /Users/steve/Documents/Dev/Flask/ComposeFlask/composeMusic-ML-python
-      dockerfile: Dockerfile
-      args:
-        channel:  preprod #dev # prod #preprod # dev # for local docker-compose. prod will be on aws
-    ports:
-      - "8010:8010"
-    restart: always #unless-stopped
+#  compose:
+#    image: python:3.8-slim-buster
+#    container_name: compose-python-ml
+#    build:
+#      context: /Users/steve/Documents/Dev/Flask/ComposeFlask/composeMusic-ML-python
+#      dockerfile: Dockerfile
+#      args:
+#        channel:  preprod #dev # prod #preprod # dev # for local docker-compose. prod will be on aws
+#    ports:
+#      - "8010:8010"
+#    restart: always #unless-stopped
 
 #  db:
 #    image: postgres
